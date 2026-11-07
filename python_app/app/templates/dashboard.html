@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPI Offline Mesh — Live Architecture Demo</title>
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --bg-card: #111726;
+            --bg-card-hover: #161f33;
+            --border: #1e293b;
+            --border-highlight: #334155;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #22c55e;
+            --accent-purple: #a855f7;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-dark); color: var(--text-main);
+            min-height: 100vh; padding: 24px; line-height: 1.5;
+        }
+        .container { max-width: 1380px; margin: 0 auto; }
+        
+        /* Header */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px;
+        }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand-icon {
+            width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #0284c7, #2563eb);
+            display: flex; align-items: center; justify-content: center; font-size: 22px;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+        }
+        .brand-text h1 { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+        .brand-text p { font-size: 13px; color: var(--text-muted); }
+        .header-actions { display: flex; gap: 10px; }
+        
+        /* Quick stats row */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden;
+        }
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+        }
+        .stat-card.blue::before { background: var(--accent-blue); }
+        .stat-card.green::before { background: var(--accent-green); }
+        .stat-card.purple::before { background: var(--accent-purple); }
+        .stat-card.orange::before { background: var(--accent-orange); }
+        .stat-title { font-size: 12px; text-transform: uppercase; font-weight: 600; color: var(--text-muted); }
+        .stat-value { font-size: 26px; font-weight: 700; font-family: 'Consolas', monospace; color: #fff; }
+        
+        /* Stepper Flow Banner */
+        .stepper-card {
+            background: linear-gradient(180deg, #131c31 0%, #0f172a 100%);
+            border: 1px solid var(--border-highlight); border-radius: 14px; padding: 20px 24px;
+            margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .stepper-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;
+        }
+        .stepper-header h2 { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .stepper-steps {
+            display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 16px; align-items: stretch;
+        }
+        .step-box {
+            background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 10px;
+            padding: 16px; display: flex; flex-direction: column; justify-content: space-between;
+            transition: all 0.2s; position: relative;
+        }
+        .step-box:hover { border-color: var(--accent-blue); background: var(--bg-card-hover); }
+        .step-tag {
+            font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent-blue);
+            margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+        }
+        .step-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+        .step-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4; }
+        
+        /* Form inputs in step 1 */
+        .form-row { display: flex; gap: 8px; margin-bottom: 10px; }
+        .input-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+        .input-group label { font-size: 11px; color: var(--text-muted); }
+        select, input {
+            background: #090d16; border: 1px solid var(--border-highlight); border-radius: 6px;
+            color: #fff; padding: 7px 10px; font-size: 13px; outline: none; width: 100%;
+        }
+        select:focus, input:focus { border-color: var(--accent-blue); }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            border: none; border-radius: 7px; padding: 8px 14px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.15s; text-decoration: none;
+        }
+        .btn-primary { background: #0284c7; color: #fff; }
+        .btn-primary:hover { background: #0369a1; box-shadow: 0 0 12px rgba(2, 132, 199, 0.4); }
+        .btn-success { background: #16a34a; color: #fff; }
+        .btn-success:hover { background: #15803d; }
+        .btn-purple { background: #9333ea; color: #fff; }
+        .btn-purple:hover { background: #7e22ce; }
+        .btn-secondary { background: #1e293b; color: #e2e8f0; border: 1px solid var(--border-highlight); }
+        .btn-secondary:hover { background: #334155; }
+        .btn-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
+        .btn-block { width: 100%; margin-top: auto; }
+
+        /* Main Workspace Split */
+        .workspace-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+        
+        /* Card Containers */
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 20px; display: flex; flex-direction: column;
+        }
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+            padding-bottom: 12px; border-bottom: 1px solid var(--border);
+        }
+        .card-header h3 { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        
+        /* Visual Mesh Map */
+        .mesh-container {
+            display: flex; flex-direction: column; gap: 14px; background: #090d16;
+            border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+        }
+        .zone-header {
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 6px; padding-bottom: 4px;
+        }
+        .zone-offline { color: #f59e0b; border-bottom: 1px dashed rgba(245, 158, 11, 0.3); }
+        .zone-online { color: #22c55e; border-bottom: 1px dashed rgba(34, 197, 94, 0.3); }
+        
+        .device-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .device-node {
+            background: #111726; border: 1px solid var(--border); border-radius: 8px;
+            padding: 12px; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s;
+            position: relative;
+        }
+        .device-node.sender { border-color: rgba(56, 189, 248, 0.5); background: rgba(56, 189, 248, 0.04); }
+        .device-node.bridge { border-color: rgba(34, 197, 94, 0.5); background: rgba(34, 197, 94, 0.05); }
+        .device-top { display: flex; justify-content: space-between; align-items: center; }
+        .device-name { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+        .badge {
+            font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; text-transform: uppercase;
+        }
+        .badge-offline { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+        .badge-4g { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+        .device-packets {
+            display: flex; flex-wrap: wrap; gap: 4px; min-height: 24px; align-items: center;
+        }
+        .packet-pill {
+            font-family: 'Consolas', monospace; font-size: 11px; background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 6px; border-radius: 4px;
+            display: inline-flex; align-items: center; gap: 4px; animation: pulseGlow 1.5s infinite alternate;
+        }
+        @keyframes pulseGlow {
+            from { box-shadow: 0 0 2px rgba(56, 189, 248, 0.2); }
+            to { box-shadow: 0 0 8px rgba(56, 189, 248, 0.6); }
+        }
+        .empty-packets { font-size: 11px; color: #64748b; font-style: italic; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th {
+            text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 600;
+            text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border);
+        }
+        td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+        tr:hover td { background: var(--bg-card-hover); }
+        .val-amount { font-family: 'Consolas', monospace; font-weight: 700; color: #4ade80; }
+        
+        .chip-status {
+            display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+        }
+        .chip-SETTLED { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .chip-DUPLICATE_DROPPED { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .chip-REJECTED, .chip-INVALID { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        /* Activity Console */
+        .terminal-log {
+            background: #050811; border: 1px solid var(--border); border-radius: 8px;
+            font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; color: #38bdf8;
+            padding: 14px; max-height: 220px; overflow-y: auto; white-space: pre-wrap; line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header>
+        <div class="brand">
+            <div class="brand-icon">📡</div>
+            <div class="brand-text">
+                <h1>UPI Offline Mesh Payment Simulator</h1>
+                <p>Deferred settlement via peer-to-peer Bluetooth mesh gossip and hybrid RSA-OAEP + AES-GCM encryption</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="autoPlayDemo()">▶️ Auto-Run Full Pipeline</button>
+            <button class="btn btn-danger" onclick="resetMesh()">🗑️ Reset Network</button>
+        </div>
+    </header>
+
+    <!-- Stat Metrics -->
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <span class="stat-title">Network Mesh Nodes</span>
+            <span class="stat-value" id="metric-devices">5 Devices</span>
+        </div>
+        <div class="stat-card green">
+            <span class="stat-title">Active Mesh Packets</span>
+            <span class="stat-value" id="metric-packets">0 In Flight</span>
+        </div>
+        <div class="stat-card orange">
+            <span class="stat-title">Idempotency Cache (Deduplication)</span>
+            <span class="stat-value" id="metric-cache">0 Claimed</span>
+        </div>
+        <div class="stat-card purple">
+            <span class="stat-title">Settled Transactions</span>
+            <span class="stat-value" id="metric-txs">0 Settled</span>
+        </div>
+    </div>
+
+    <!-- Stepper Interactive Action Banner -->
+    <div class="stepper-card">
+        <div class="stepper-header">
+            <h2>🎬 Interactive Demo Sequence</h2>
+            <span style="font-size: 12px; color: var(--text-muted);">Step-by-step pipeline: offline signing → mesh gossip → 4G bridge upload → atomic settlement</span>
+        </div>
+        <div class="stepper-steps">
+            
+            <!-- Step 1 -->
+            <div class="step-box">
+                <div>
+                    <div class="step-tag"><span>Step 1</span> • Offline Phone</div>
+                    <div class="step-title">Compose & Encrypt Payment</div>
+                    <div class="step-desc">Sender generates AES-256 key, encrypts payload, and wraps key with server's RSA-2048 public key.</div>
+                    
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label>Sender</label>
+                            <select id="senderVpa">
+                                <option value="alice@demo">Alice (₹5,000)</option>
+                                <option value="bob@demo">Bob (₹1,000)</option>
+                                <option value="carol@demo">Carol (₹2,500)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Receiver</label>
+                            <select id="receiverVpa">
+                                <option value="bob@demo">Bob</option>
+                                <option value="alice@demo">Alice</option>
+                                <option value="carol@demo">Carol</option>
+                                <option value="dave@demo">Dave</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label>Amount (₹)</label>
+                            <input type="number" id="amount" value="500" min="1">
+                        </div>
+                        <div class="input-group">
+                            <label>UPI PIN</label>
+                            <input type="text" id="pin" value="1234" maxlength="4">
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="sendPacket()">📤 Inject into Alice's Phone</button>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-box">
+                <div>
+                    <div class="step-tag"><span>Step 2</span> • Peer-to-Peer BLE</div>
+                    <div class="step-title">Mesh Gossip Protocol</div>
+                    <div class="step-desc">Devices in range exchange encrypted packets. Intermediate phones cannot read or alter the ciphertext. TTL decrements per hop.</div>
+                </div>
+                <button class="btn btn-secondary btn-block" onclick="runGossip()">🔄 Run 1 Gossip Round</button>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-box">
+                <div>
+                    <div class="step-tag"><span>Step 3</span> • Bridge Walkout</div>
+                    <div class="step-title">4G Cellular Upload</div>
+                    <div class="step-desc">Bridge phones walk outside, gain 4G, and POST packets to <code>/api/bridge/ingest</code>. Tests concurrent deduplication.</div>
+                </div>
+                <button class="btn btn-success btn-block" onclick="flushBridges()">📡 Bridges Upload to Backend</button>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step-box">
+                <div>
+                    <div class="step-tag"><span>Step 4</span> • Core Settlement</div>
+                    <div class="step-title">Atomic Idempotency</div>
+                    <div class="step-desc">Backend checks <code>SHA-256(ciphertext)</code> claim. Winner settles ledger; concurrent duplicates are dropped.</div>
+                </div>
+                <button class="btn btn-purple btn-block" onclick="refresh()">🔍 Check Balances & Ledger</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Main Grid: Mesh Network Map & Accounts -->
+    <div class="workspace-grid">
+        
+        <!-- Left Column: Visual Mesh Devices -->
+        <div class="card">
+            <div class="card-header">
+                <h3>📱 Mesh Network Topology</h3>
+                <span style="font-size: 11px; color: var(--text-muted);">Real-time device packet memory</span>
+            </div>
+            
+            <div class="mesh-container">
+                <!-- Offline Basement -->
+                <div class="zone-header zone-offline">🚫 Basement Offline Zone (No Internet / BLE Mesh Only)</div>
+                <div class="device-row">
+                    <div class="device-node sender" id="dev-phone-alice">
+                        <div class="device-top">
+                            <span class="device-name">📱 Alice (Sender)</span>
+                            <span class="badge badge-offline">Offline</span>
+                        </div>
+                        <div class="device-packets" id="packets-phone-alice">
+                            <span class="empty-packets">No packets held</span>
+                        </div>
+                    </div>
+                    <div class="device-node" id="dev-phone-stranger1">
+                        <div class="device-top">
+                            <span class="device-name">📱 Stranger 1</span>
+                            <span class="badge badge-offline">Offline</span>
+                        </div>
+                        <div class="device-packets" id="packets-phone-stranger1">
+                            <span class="empty-packets">No packets held</span>
+                        </div>
+                    </div>
+                    <div class="device-node" id="dev-phone-stranger2">
+                        <div class="device-top">
+                            <span class="device-name">📱 Stranger 2</span>
+                            <span class="badge badge-offline">Offline</span>
+                        </div>
+                        <div class="device-packets" id="packets-phone-stranger2">
+                            <span class="empty-packets">No packets held</span>
+                        </div>
+                    </div>
+                    <div class="device-node" id="dev-phone-stranger3">
+                        <div class="device-top">
+                            <span class="device-name">📱 Stranger 3</span>
+                            <span class="badge badge-offline">Offline</span>
+                        </div>
+                        <div class="device-packets" id="packets-phone-stranger3">
+                            <span class="empty-packets">No packets held</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Online Zone -->
+                <div class="zone-header zone-online" style="margin-top: 8px;">🌐 Outside Zone (4G LTE Connected Bridge)</div>
+                <div class="device-node bridge" id="dev-phone-bridge">
+                    <div class="device-top">
+                        <span class="device-name">📶 Bridge Node (Phone Walks Outside)</span>
+                        <span class="badge badge-4g">🌐 4G Online</span>
+                    </div>
+                    <div class="device-packets" id="packets-phone-bridge">
+                        <span class="empty-packets">No packets held</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Ledger Balances -->
+        <div class="card">
+            <div class="card-header">
+                <h3>🏦 Core Bank Accounts & Ledger</h3>
+                <span style="font-size: 11px; color: var(--text-muted);">Atomic Balance Updates with Optimistic Locking</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Virtual Payment Address (VPA)</th>
+                        <th>Account Holder</th>
+                        <th>Current Balance</th>
+                    </tr>
+                </thead>
+                <tbody id="accounts-tbody">
+                    <tr><td colspan="3" style="text-align:center; color:#64748b;">Loading accounts...</td></tr>
+                </tbody>
+            </table>
+
+            <div style="margin-top: 20px; font-size: 11px; color: var(--text-muted); display:flex; justify-content:space-between;">
+                <span>🔒 Ledger Security: AES-256-GCM + RSA-OAEP</span>
+                <span id="cache-subtext">Idempotency Hash Table: 0 entries</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Lower Section: Transactions Ledger & Activity Log -->
+    <div class="workspace-grid">
+        
+        <!-- Transaction Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3>📜 Settled Transaction Ledger</h3>
+                <span style="font-size: 11px; color: var(--text-muted);">Immutable Record of Deduplicated Payments</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tx ID</th>
+                        <th>From → To</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Hops</th>
+                        <th>Bridge Node</th>
+                    </tr>
+                </thead>
+                <tbody id="tx-tbody">
+                    <tr><td colspan="6" style="text-align:center; color:#64748b;">No transactions recorded yet</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Real-time Console Log -->
+        <div class="card">
+            <div class="card-header">
+                <h3>🪵 System Activity & Audit Trail</h3>
+                <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 11px;" onclick="clearLog()">Clear</button>
+            </div>
+            <div class="terminal-log" id="terminal-log">[Ready] System initialized. Ready to simulate offline mesh payments.</div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function log(msg) {
+    const el = document.getElementById('terminal-log');
+    const time = new Date().toLocaleTimeString();
+    el.textContent = `[${time}] ${msg}\n` + el.textContent;
+}
+
+function clearLog() {
+    document.getElementById('terminal-log').textContent = '[Cleared Activity Log]';
+}
+
+async function refresh() {
+    try {
+        // 1. Fetch Mesh State
+        const m = await fetch('/api/mesh/state').then(r => r.json());
+        let totalPackets = 0;
+        
+        m.devices.forEach(d => {
+            totalPackets += d.packetCount;
+            const target = document.getElementById(`packets-${d.deviceId}`);
+            if (target) {
+                if (d.packetIds.length === 0) {
+                    target.innerHTML = '<span class="empty-packets">No packets held</span>';
+                } else {
+                    target.innerHTML = d.packetIds.map(id => 
+                        `<span class="packet-pill">📦 ${id}</span>`
+                    ).join('');
+                }
+            }
+        });
+
+        document.getElementById('metric-packets').textContent = `${totalPackets} In Flight`;
+        document.getElementById('metric-cache').textContent = `${m.idempotencyCacheSize} Claimed`;
+        document.getElementById('cache-subtext').textContent = `Idempotency Hash Table: ${m.idempotencyCacheSize} entries`;
+
+        // 2. Fetch Accounts
+        const accs = await fetch('/api/accounts').then(r => r.json());
+        const accTbody = document.getElementById('accounts-tbody');
+        accTbody.innerHTML = accs.map(a => `
+            <tr>
+                <td><code>${a.vpa}</code></td>
+                <td><strong>${a.holderName}</strong></td>
+                <td class="val-amount">₹${parseFloat(a.balance).toFixed(2)}</td>
+            </tr>
+        `).join('');
+
+        // 3. Fetch Transactions
+        const txs = await fetch('/api/transactions').then(r => r.json());
+        const txTbody = document.getElementById('tx-tbody');
+        document.getElementById('metric-txs').textContent = `${txs.filter(t => t.status === 'SETTLED').length} Settled`;
+
+        if (txs.length === 0) {
+            txTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b;">No transactions recorded yet</td></tr>';
+        } else {
+            txTbody.innerHTML = txs.map(t => `
+                <tr>
+                    <td>#${t.id}</td>
+                    <td><code>${t.senderVpa}</code> → <code>${t.receiverVpa}</code></td>
+                    <td class="val-amount">₹${parseFloat(t.amount).toFixed(2)}</td>
+                    <td><span class="chip-status chip-${t.status}">${t.status}</span></td>
+                    <td>${t.hopCount} hops</td>
+                    <td>${t.bridgeNodeId}</td>
+                </tr>
+            `).join('');
+        }
+    } catch (e) {
+        console.error("Refresh error:", e);
+    }
+}
+
+async function sendPacket() {
+    const sender = document.getElementById('senderVpa').value;
+    const receiver = document.getElementById('receiverVpa').value;
+    const amount = parseFloat(document.getElementById('amount').value);
+    const pin = document.getElementById('pin').value;
+
+    if (sender === receiver) {
+        alert("Sender and receiver cannot be the same!");
+        return;
+    }
+
+    const body = {
+        senderVpa: sender,
+        receiverVpa: receiver,
+        amount: amount,
+        pin: pin,
+        ttl: 5,
+        startDevice: 'phone-alice'
+    };
+
+    try {
+        const r = await fetch('/api/demo/send', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        }).then(res => res.json());
+
+        log(`[Step 1: Signing] Phone-Alice generated encrypted packet ${r.packetId.substring(0,8)}...`);
+        log(`             Payload encrypted via AES-256-GCM + RSA-OAEP session wrap`);
+        refresh();
+    } catch (err) {
+        log(`❌ Error: ${err}`);
+    }
+}
+
+async function runGossip() {
+    try {
+        const r = await fetch('/api/mesh/gossip', {method: 'POST'}).then(res => res.json());
+        log(`[Step 2: BLE Gossip] ${r.transfers} hop transfer(s) completed across neighboring nodes.`);
+        refresh();
+    } catch (err) {
+        log(`❌ Gossip error: ${err}`);
+    }
+}
+
+async function flushBridges() {
+    try {
+        const r = await fetch('/api/mesh/flush', {method: 'POST'}).then(res => res.json());
+        log(`[Step 3: 4G Flush] ${r.uploadsAttempted} bridge upload(s) sent to /api/bridge/ingest:`);
+        r.results.forEach(res => {
+            log(`  ↳ Node ${res.bridgeNode} uploaded ${res.packetId} → Result: ${res.outcome}` + (res.reason ? ` (${res.reason})` : ''));
+        });
+        refresh();
+    } catch (err) {
+        log(`❌ Bridge flush error: ${err}`);
+    }
+}
+
+async function resetMesh() {
+    try {
+        await fetch('/api/mesh/reset', {method: 'POST'});
+        log(`[Reset] Mesh network memory & idempotency deduplication cache cleared.`);
+        refresh();
+    } catch (err) {
+        log(`❌ Reset error: ${err}`);
+    }
+}
+
+// 1-Click Auto Demo for Interviews
+async function autoPlayDemo() {
+    log(`🎬 Starting Guided Auto-Walkthrough...`);
+    await resetMesh();
+    await new Promise(r => setTimeout(r, 600));
+    await sendPacket();
+    await new Promise(r => setTimeout(r, 1000));
+    log(`🔄 Simulating devices moving in basement...`);
+    await runGossip();
+    await new Promise(r => setTimeout(r, 800));
+    await runGossip();
+    await new Promise(r => setTimeout(r, 1000));
+    log(`📶 Bridge node walks outside into 4G range...`);
+    await flushBridges();
+    log(`🎉 Walkthrough complete: Payment settled exactly once!`);
+}
+
+refresh();
+setInterval(refresh, 2500);
+</script>
+</body>
+</html>

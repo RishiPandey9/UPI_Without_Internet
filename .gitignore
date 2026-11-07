@@ -2,6 +2,11 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 *.class
 *.log
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
 .idea/
 *.iml
 .vscode/
